@@ -2,7 +2,7 @@
 
 ![](https://i.ibb.co/0cfnMzG/Untitled-4.png)
 
-Powershell Core remote controll in web browser for Windows.
+Powershell Core remote control in web browser for Windows.
 
 # Prerequisites
 1. .NET Core 3.1
