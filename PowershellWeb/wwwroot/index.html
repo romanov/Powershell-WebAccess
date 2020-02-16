@@ -1,0 +1,133 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <title>Powershell Web</title>
+    <style>
+        html, body {
+            font-family: Consolas, monospace;
+            background: #012456;
+            color: white;
+            font-size: 14px;
+        }
+
+        pre {
+            font-family: inherit;
+            font-size: 1rem;
+            margin: 0;
+            padding: 0;
+        }
+
+        input {
+            font-family: inherit;
+            font-size: 1rem;
+            background: none;
+            color: white;
+            border: none;
+            display: inline-block;
+        }
+
+        button {
+            border: none;
+            background: none;
+            float: right;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <button onclick="showLogin()"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-shield"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg></button>
+
+    <div id="console"></div>
+
+    <div style="margin-top:1rem">
+        <input type="text" id="folder" style="margin-right:2px;display:none" readonly /> <input type="text" id="console-input" />
+    </div>
+
+    <script>
+
+        var polling = null;
+
+        var folder = document.getElementById("folder");
+        document.getElementById("console-input").focus();
+
+        document.getElementById("console-input").addEventListener("keyup", function (event) {
+
+            if (event.keyCode == 13) {
+                event.preventDefault();
+                sendCommand(document.getElementById("console-input").value);
+                document.getElementById("console-input").value = "";
+                polling = setInterval(() => fetchAnswer(), 800);
+            }
+
+        });
+
+        function showLogin() {
+            var key = window.prompt("Set client password:");
+            localStorage.setItem("key", key);
+        }
+
+        function sendCommand(commandString) {
+
+            var data = new FormData();
+            data.append("cmd", commandString);
+            data.append("key", localStorage.getItem("key"));
+
+            fetch('/command', {
+                method: 'POST',
+                body: data
+            }).then(function (response) {
+                return response.json();
+            }).then(function (answer) {
+
+                if (answer.Error > 0) {
+                    window.alert(answer.Result);
+                    clearInterval(polling);
+                }
+
+            }).catch(function (error) {
+                window.alert(error);
+            });
+
+        }
+
+
+        function printAnswer(folderStr, answerLine) {
+            folder.value = folderStr;
+            var el = document.createElement("pre");
+            el.innerHTML = answerLine;
+            document.getElementById("console").appendChild(el);
+            window.scrollTo(0, document.body.scrollHeight);
+        }
+
+        function fetchAnswer() {
+
+            fetch('/status').then(function (response) {
+                return response.json();
+            }).then(function (answer) {
+
+                if (Number(answer.Count) > 0) {
+                    printAnswer("", answer.Result);
+                    clearInterval(polling);
+                }
+
+
+            }).catch(function (error) {
+                console.log(error);
+            });
+
+        }
+
+
+
+
+
+
+
+
+    </script>
+
+</body>
+</html>
