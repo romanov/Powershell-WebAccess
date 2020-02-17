@@ -27,9 +27,11 @@ Set-Location -Path "$directoryPath\powershell-web"
 Start-Process dotnet -NoNewWindow -ArgumentList ".\PowershellWeb.dll --key your-secret-password"
 ```
 
-# Port
-The default port for now is `5000`.
-To open port on window type the following command:
+# Port forwarding
+The default port for HTTP-server is `5000`.
+
+To open this port on Windows use the following command:
+
 `netsh advfirewall firewall add rule name="Powershell WebAccess" dir=in action=allow protocol=TCP localport=5000`
 
 # Shutdown
