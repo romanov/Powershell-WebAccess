@@ -12,7 +12,7 @@ Powershell Core remote control in web browser for Windows.
 # Run (manual)
 1. Download [the latest release](https://github.com/romanov/Powershell-WebAccess/releases) and unpack
 2. Run it `dotnet PowershellWeb.dll --key your-secret-password` or `PowershellWeb.exe --key your-secret-password`
-3. Copy secret key and paste to the browser (click on a shield) and paste the first line of console output
+3. Copy secret key and paste to the browser (click on a shield) and paste your secret key
 
 # Install (automatic)
 ```
