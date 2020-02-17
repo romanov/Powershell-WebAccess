@@ -21,7 +21,6 @@ $url = "https://github.com/romanov/Powershell-WebAccess/releases/download/v1/Pow
 $installPath = "$directoryPath\powershellweb.zip"
 Invoke-WebRequest -Uri $url -OutFile $installPath
 Expand-Archive $installPath -DestinationPath "$directoryPath\powershell-web"
-#Start-Job -Name "powershell-web" -ScriptBlock { dotnet run "$directoryPath/powershell-web" }
 Set-Location -Path "$directoryPath\powershell-web"
 dotnet .\PowershellWeb.dll
 ```
