@@ -7,11 +7,24 @@ using System.Threading.Tasks;
 
 namespace PowershellWeb
 {
-    
+
     public sealed class PowershellSingleton
     {
-        public string Key { get; } = RandomHelper.RandomString(20);
 
+        string _key = RandomHelper.RandomString(20);
+
+        public string Key
+        {
+            get { return _key; }
+        }
+
+        public void TrySetKey(string key)
+        {
+            if (!string.IsNullOrEmpty(key))
+                _key = key;
+
+            Console.WriteLine("SERVER KEY: " + Key);
+        }
 
         string _currentPath = string.Empty;
 
@@ -34,8 +47,6 @@ namespace PowershellWeb
         {
             if (process == null)
             {
-                Console.WriteLine(Key);
-
                 process = new Process();
                 process.StartInfo.FileName = @"C:\Program Files\PowerShell\7-preview\pwsh.exe";
                 process.StartInfo.CreateNoWindow = true;
@@ -66,7 +77,7 @@ namespace PowershellWeb
 
         public (byte, string) GetLastResult()
         {
-            if(RecentData.Count > 0)
+            if (RecentData.Count > 0)
             {
                 var sb = new StringBuilder();
 
@@ -84,7 +95,7 @@ namespace PowershellWeb
             }
 
 
-       
+
         }
 
 

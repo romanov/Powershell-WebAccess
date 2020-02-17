@@ -26,7 +26,12 @@
             color: white;
             border: none;
             display: inline-block;
+            outline: none;
         }
+
+            input:focus {
+                outline: none;
+            }
 
         button {
             border: none;
@@ -43,7 +48,7 @@
     <div id="console"></div>
 
     <div style="margin-top:1rem">
-        <input type="text" id="folder" style="margin-right:2px;display:none" readonly /> <input type="text" id="console-input" />
+        <input type="text" id="folder" style="margin-right:2px;display:none" readonly /> <input type="text" id="console-input" style="width:100%" />
     </div>
 
     <script>
@@ -57,7 +62,8 @@
 
             if (event.keyCode == 13) {
                 event.preventDefault();
-                sendCommand(document.getElementById("console-input").value);
+                var commandInp = document.getElementById("console-input").value;
+                sendCommand(commandInp);
                 document.getElementById("console-input").value = "";
                 polling = setInterval(() => fetchAnswer(), 800);
             }
