@@ -7,6 +7,7 @@ Powershell Core remote control in web browser for Windows.
 # Prerequisites
 1. .NET Core 3.1
 2. pwsh.exe installed (preview 7.0)
+`#iex "& { $(irm https://aka.ms/install-powershell.ps1) } -UseMSI -Preview -Quiet"`
 
 
 # Run (manual)
