@@ -17,6 +17,7 @@
     },
     "PowershellWeb": {
       "commandName": "Project",
+      "commandLineArgs": "--key test",
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       },

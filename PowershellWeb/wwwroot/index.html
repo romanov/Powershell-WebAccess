@@ -25,11 +25,11 @@
             background: none;
             color: white;
             border: none;
-            display: inline-block;
+            width: 100%;
             outline: none;
         }
 
-            input:focus {
+        input:focus {
                 outline: none;
             }
 
@@ -47,8 +47,8 @@
 
     <div id="console"></div>
 
-    <div style="margin-top:1rem">
-        <input type="text" id="folder" style="margin-right:2px;display:none" readonly /> <input type="text" id="console-input" style="width:100%" />
+    <div style="margin-top: 1rem;">
+        <div class="folder" id="folder" style="margin-right: 2px"></div><input type="text" id="console-input" />
     </div>
 
     <script>
@@ -60,7 +60,7 @@
 
         document.getElementById("console-input").addEventListener("keyup", function (event) {
 
-            if (event.keyCode == 13) {
+            if (event.keyCode === 13) {
                 event.preventDefault();
                 var commandInp = document.getElementById("console-input").value;
                 sendCommand(commandInp);
@@ -96,12 +96,11 @@
             }).catch(function (error) {
                 window.alert(error);
             });
-
         }
 
 
-        function printAnswer(folderStr, answerLine) {
-            folder.value = folderStr;
+        function printAnswer(answerLine) {
+            
             var el = document.createElement("pre");
             el.innerHTML = answerLine;
             document.getElementById("console").appendChild(el);
@@ -115,21 +114,33 @@
             }).then(function (answer) {
 
                 if (Number(answer.Count) > 0) {
-                    printAnswer("", answer.Result);
-                    clearInterval(polling);
+                  printAnswer(answer.Result);
+                  clearInterval(polling);
+                  fetchFolder();
                 }
-
-
             }).catch(function (error) {
                 console.log(error);
             });
 
         }
 
+        function fetchFolder() {
+          fetch('/folder').then(function (response) {
+            return response.json();
+          }).then(function (answer) {
 
+            if (answer.Error > 0) {
+              window.alert(answer.Result);
+            }
 
+            folder.innerHTML = answer.Result;
 
+          }).catch(function (error) {
+            window.alert(error);
+          });
+        }
 
+        polling = setInterval(() => fetchAnswer(), 800);
 
 
 
