@@ -2,6 +2,8 @@ using System;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
@@ -92,6 +94,18 @@ namespace PowershellWeb
 
 
                         await response.WriteAsync(json);
+                    });
+
+                    routeBuilder.MapGet("/autoCompleteItems", async (request, response, routeData) =>
+                    {
+                      PowershellSingleton.Instance.RecentData.Clear();
+                      PowershellSingleton.Instance.InvokeCommand("(Get-Command).Name");
+                      PowershellSingleton.Instance.WaitForResults(100);
+
+                      var recentData = string.Join(",", PowershellSingleton.Instance.RecentData.Skip(1));
+                      response.StatusCode = 200;
+                      response.ContentType = "text/plain";
+                      await response.WriteAsync(recentData);
                     });
 
                     routeBuilder.MapGet("/folder", async (request, response, routeData) =>

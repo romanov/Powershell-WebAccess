@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace PowershellWeb
 {
@@ -32,7 +33,7 @@ namespace PowershellWeb
           get
           {
             InvokeCommand();
-            WaitForResults();
+            WaitForResults(2);
 
             var path = RecentData.Last();
             RecentData.Clear();
@@ -40,12 +41,19 @@ namespace PowershellWeb
           }
         }
 
-        internal void WaitForResults()
+        internal void WaitForResults(int minimumResults = 1)
         {
-          while (RecentData.Count != 2)
+          var waitTask = Task.Factory.StartNew(() =>
           {
-            Thread.Sleep(3);
-          }
+            var recentCount = -1;
+            while (RecentData.Count != recentCount || RecentData.Count < minimumResults)
+            {
+              recentCount = RecentData.Count;
+              Task.Delay(30).Wait();
+            }
+          });
+
+          waitTask.Wait();
         }
 
         public HashSet<string> RecentData { get; } = new HashSet<string>();

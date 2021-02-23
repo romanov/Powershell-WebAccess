@@ -19,7 +19,7 @@
             padding: 0;
         }
 
-        input {
+        input, .folder {
             font-family: inherit;
             font-size: 1rem;
             background: none;
@@ -48,7 +48,7 @@
     <div id="console"></div>
 
     <div style="margin-top: 1rem;">
-        <div class="folder" id="folder" style="margin-right: 2px"></div><input type="text" id="console-input" />
+      <div class="folder" id="folder" style="margin-right: 2px"></div><input type="text" id="console-input" />
     </div>
 
     <script>
@@ -56,11 +56,40 @@
         var polling = null;
         var history = {};
         var historyCount = 0;
-
+        var autoComplete = { 
+          Runs: false,
+          Items: {},
+          Matches: {},
+          TabCount: 0
+        }
+ 
         var folder = document.getElementById("folder");
-        document.getElementById("console-input").focus();
+        var consoleInput = document.getElementById("console-input");
+        consoleInput.focus();
 
-        document.getElementById("console-input").addEventListener("keyup", function (event) {
+        consoleInput.addEventListener("keydown", event => {
+          event = event || window.event;
+          // tab pressed
+          if (event.keyCode === 9) {
+            event.preventDefault();
+            if (Object.keys(autoComplete.Matches).length === 0) {
+              var inputUpper =consoleInput.value.toUpperCase();
+              autoComplete.Matches = autoComplete.items.filter(item => 
+                item.toUpperCase().startsWith(inputUpper));
+            }
+            var nextTabItem = autoComplete.Matches[autoComplete.TabCount];
+            if (nextTabItem === undefined) {
+              return;
+            }
+            consoleInput.value = nextTabItem;
+            autoComplete.TabCount++;
+
+            return;
+          }
+
+          autoComplete.TabCount = 0;
+          autoComplete.Matches = {};
+
           // return pressed
             if (event.keyCode === 13) {
               event.preventDefault();
@@ -68,6 +97,7 @@
                 sendCommand(commandInp);
                 document.getElementById("console-input").value = "";
                 polling = setInterval(() => fetchAnswer(), 800);
+                return;
             }
 
             // arrow up
@@ -78,6 +108,8 @@
               if (historyCount > historyLength) {
                 historyCount = historyLength;
               }
+
+              return;
             }
 
             // arrow down
@@ -90,6 +122,10 @@
                 getHistory(historyCount);
               }
             }
+
+          if (autoComplete.items === undefined) {
+            readAutoCompleteItems();
+          }
 
         });
 
@@ -126,18 +162,16 @@
             fetch('/command', {
                 method: 'POST',
                 body: data
-            }).then(function (response) {
-                return response.json();
-            }).then(function (answer) {
+            })
+              .then(response => response.json())
+              .then(answer => {
 
                 if (answer.Error > 0) {
                     window.alert(answer.Result);
                     clearInterval(polling);
                 }
 
-            }).catch(function (error) {
-                window.alert(error);
-            });
+            }).catch(error => window.alert(error));
         }
 
         function printAnswer(answerLine) {
@@ -150,9 +184,9 @@
 
         function fetchAnswer() {
 
-            fetch('/status').then(function (response) {
-                return response.json();
-            }).then(function (answer) {
+            fetch('/status')
+              .then(response => response.json())
+              .then(function (answer) {
 
                 if (Number(answer.Count) > 0) {
                   printAnswer(answer.Result);
@@ -160,17 +194,30 @@
                   clearInterval(polling);
                   fetchFolder();
                 }
-            }).catch(function (error) {
+            }).catch(error => {
                 console.log(error);
                 clearInterval(polling);
             });
+        }
 
+        function readAutoCompleteItems() {
+          if (autoComplete.Runs)
+            return;
+
+          autoComplete.Runs = true;
+          fetch('/autoCompleteItems')
+            .then(response =>
+              response.text()
+              .then(text =>
+                text.split(','))
+                .then(items => {
+                autoComplete.items = items;
+                autoComplete.Runs = false;
+              }));
         }
 
         function fetchFolder() {
-          fetch('/folder').then(function (response) {
-            return response.json();
-          }).then(function (answer) {
+          fetch('/folder').then(response => response.json()).then(answer => {
 
             if (answer.Error > 0) {
               window.alert(answer.Result);
@@ -178,9 +225,7 @@
 
             folder.innerHTML = answer.Result;
 
-          }).catch(function (error) {
-            window.alert(error);
-          });
+          }).catch(error => window.alert(error));
         }
 
         polling = setInterval(() => fetchAnswer(), 800);
