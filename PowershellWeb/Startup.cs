@@ -75,6 +75,7 @@ namespace PowershellWeb
                             if (inputCommand == "Stop-WebAccess")
                                 Environment.Exit(-1);
 
+                            PowershellSingleton.Instance.RecentData.Clear();
                             PowershellSingleton.Instance.InvokeCommand(inputCommand);
 
                             cr = new CommandResult

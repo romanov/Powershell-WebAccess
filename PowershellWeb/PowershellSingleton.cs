@@ -32,14 +32,19 @@ namespace PowershellWeb
           get
           {
             InvokeCommand();
-            while (RecentData.Count < 2)
-            {
-              Thread.Sleep(3);
-            }
+            WaitForResults();
 
             var path = RecentData.Last();
             RecentData.Clear();
             return path;
+          }
+        }
+
+        internal void WaitForResults()
+        {
+          while (RecentData.Count != 2)
+          {
+            Thread.Sleep(3);
           }
         }
 

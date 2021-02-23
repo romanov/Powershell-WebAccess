@@ -54,18 +54,41 @@
     <script>
 
         var polling = null;
+        var history = {};
+        var historyCount = 0;
 
         var folder = document.getElementById("folder");
         document.getElementById("console-input").focus();
 
         document.getElementById("console-input").addEventListener("keyup", function (event) {
-
+          // return pressed
             if (event.keyCode === 13) {
-                event.preventDefault();
+              event.preventDefault();
                 var commandInp = document.getElementById("console-input").value;
                 sendCommand(commandInp);
                 document.getElementById("console-input").value = "";
                 polling = setInterval(() => fetchAnswer(), 800);
+            }
+
+            // arrow up
+            if (event.keyCode === 38) {
+              getHistory(historyCount);
+              historyCount++;
+              var historyLength = getHistoryCount() - 1;
+              if (historyCount > historyLength) {
+                historyCount = historyLength;
+              }
+            }
+
+            // arrow down
+            if (event.keyCode === 40) {
+              historyCount--;
+              if (historyCount < 0) {
+                document.getElementById("console-input").value = "";
+                historyCount = 0;
+              } else {
+                getHistory(historyCount);
+              }
             }
 
         });
@@ -75,8 +98,27 @@
             localStorage.setItem("key", key);
         }
 
+        function getHistoryCount() {
+          return Object.keys(history).length;
+        }
+
+        function addHistory(command) {
+          var currentHistoryLength = getHistoryCount();
+          history[currentHistoryLength] = command;
+        }
+
+        function getHistory(count) {
+          var currentHistoryLength = getHistoryCount();
+          var getCount = currentHistoryLength - count - 1;
+          if (getCount < 0) {
+            getCount = 0;
+          }
+          document.getElementById("console-input").value = history[getCount];
+        }
+
         function sendCommand(commandString) {
 
+          addHistory(commandString);
             var data = new FormData();
             data.append("cmd", commandString);
             data.append("key", localStorage.getItem("key"));
@@ -98,7 +140,6 @@
             });
         }
 
-
         function printAnswer(answerLine) {
             
             var el = document.createElement("pre");
@@ -115,11 +156,13 @@
 
                 if (Number(answer.Count) > 0) {
                   printAnswer(answer.Result);
+                } else {
                   clearInterval(polling);
                   fetchFolder();
                 }
             }).catch(function (error) {
                 console.log(error);
+                clearInterval(polling);
             });
 
         }
