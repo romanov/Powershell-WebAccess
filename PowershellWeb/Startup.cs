@@ -47,8 +47,9 @@ namespace PowershellWeb
 
 
             bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            bool islinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
 
-            if (isWindows)
+            if (isWindows || islinux)
             {
 
 
