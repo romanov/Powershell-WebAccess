@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace PowershellWeb
@@ -26,12 +27,33 @@ namespace PowershellWeb
             Console.WriteLine("SERVER KEY: " + Key);
         }
 
-        string _currentPath = string.Empty;
 
         public string CurrentPath
         {
-            get => _currentPath;
-            set => _currentPath = value;
+          get
+          {
+            InvokeCommand();
+            WaitForResults(2);
+
+            var path = RecentData.Last();
+            RecentData.Clear();
+            return path;
+          }
+        }
+
+        internal void WaitForResults(int minimumResults = 1)
+        {
+          var waitTask = Task.Factory.StartNew(() =>
+          {
+            var recentCount = -1;
+            while (RecentData.Count != recentCount || RecentData.Count < minimumResults)
+            {
+              recentCount = RecentData.Count;
+              Task.Delay(30).Wait();
+            }
+          });
+
+          waitTask.Wait();
         }
 
         public HashSet<string> RecentData { get; } = new HashSet<string>();
@@ -43,18 +65,23 @@ namespace PowershellWeb
 
         Process process = null;
 
-        public void CreateConsoleProcess(string command = "(Get-Location).path")
+        public void CreateConsoleProcess()
         {
             if (process == null)
             {
-                process = new Process();
-                process.StartInfo.FileName = @"C:\Program Files\PowerShell\7-preview\pwsh.exe";
-                process.StartInfo.CreateNoWindow = true;
-                process.StartInfo.UseShellExecute = false;
-                process.StartInfo.RedirectStandardOutput = true;
-                process.StartInfo.RedirectStandardError = true;
-                process.StartInfo.RedirectStandardInput = true;
-                process.OutputDataReceived += (sender, data) => SaveResult(data.Data);
+              process = new Process
+              {
+                StartInfo =
+                {
+                  FileName = "pwsh.exe",
+                  CreateNoWindow = true,
+                  UseShellExecute = false,
+                  RedirectStandardOutput = true,
+                  RedirectStandardError = true,
+                  RedirectStandardInput = true
+                }
+              };
+              process.OutputDataReceived += (sender, data) => SaveResult(data.Data);
                 process.ErrorDataReceived += (sender, data) => SaveResult(data.Data);
                 process.Start();
                 process.BeginOutputReadLine();
@@ -63,7 +90,7 @@ namespace PowershellWeb
             }
         }
 
-        public void InvokeCommand(string command)
+        public void InvokeCommand(string command = "(Get-Location).path")
         {
             process.StandardInput.WriteLine(command);
             process.StandardInput.Flush();
@@ -77,7 +104,7 @@ namespace PowershellWeb
 
         public (byte, string) GetLastResult()
         {
-            if (RecentData.Count > 0)
+          if (RecentData.Count > 0)
             {
                 var sb = new StringBuilder();
 
@@ -89,10 +116,8 @@ namespace PowershellWeb
                 return (1, sb.ToString());
 
             }
-            else
-            {
-                return (0, string.Empty);
-            }
+
+          return (0, string.Empty);
 
 
 

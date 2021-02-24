@@ -1,8 +1,8 @@
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -46,23 +46,23 @@ namespace PowershellWeb
             app.UseRouting();
 
 
-            bool isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+            bool isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
 
             if (isWindows)
             {
 
 
-                app.UseRouter(r =>
+                app.UseRouter(routeBuilder =>
                 {
 
-                    r.MapPost("/command", async (request, response, routeData) =>
+                    routeBuilder.MapPost("/command", async (request, response, routeData) =>
                     {
                         var form = await request.ReadFormAsync();
                         string inputCommand = form["cmd"];
                         string inputKey = form["key"];
 
                       
-                        CommandResult cr = null;
+                        CommandResult cr;
 
                         if (string.IsNullOrEmpty(inputKey) || inputKey != PowershellSingleton.Instance.Key)
                         {
@@ -77,6 +77,7 @@ namespace PowershellWeb
                             if (inputCommand == "Stop-WebAccess")
                                 Environment.Exit(-1);
 
+                            PowershellSingleton.Instance.RecentData.Clear();
                             PowershellSingleton.Instance.InvokeCommand(inputCommand);
 
                             cr = new CommandResult
@@ -86,9 +87,6 @@ namespace PowershellWeb
                             };
                         }
 
-
-
-
                         var json = JsonSerializer.Serialize(cr);
 
                         response.ContentType = "text/json";
@@ -98,27 +96,42 @@ namespace PowershellWeb
                         await response.WriteAsync(json);
                     });
 
-
-                    r.MapGet("/status", async (request, response, routeData) =>
+                    routeBuilder.MapGet("/autoCompleteItems", async (request, response, routeData) =>
                     {
-                        var lastResult = PowershellSingleton.Instance.GetLastResult();
+                      PowershellSingleton.Instance.RecentData.Clear();
+                      PowershellSingleton.Instance.InvokeCommand("(Get-Command).Name");
+                      PowershellSingleton.Instance.WaitForResults(100);
 
-                        var cr = new CommandResult
-                        {
-                            Count = lastResult.Item1,
-                            Error = 0,
-                            Result = lastResult.Item2
-                        };
-                        var json = JsonSerializer.Serialize(cr);
-                        response.ContentType = "text/json";
-                        response.StatusCode = 200;
-                        await response.WriteAsync(json);
+                      var recentData = string.Join(",", PowershellSingleton.Instance.RecentData.Skip(1));
+                      response.StatusCode = 200;
+                      response.ContentType = "text/plain";
+                      await response.WriteAsync(recentData);
                     });
 
+                    routeBuilder.MapGet("/folder", async (request, response, routeData) =>
+                    {
+                      PowershellSingleton.Instance.InvokeCommand();
+                      
+                      var cr = new CommandResult
+                      {
+                        Error = 0,
+                        Result = $"{PowershellSingleton.Instance.CurrentPath}>"
+                      };
+
+                      var json = JsonSerializer.Serialize(cr);
+
+                      response.ContentType = "text/json";
+                      response.StatusCode = 200;
+
+                      await response.WriteAsync(json);
+                    });
+
+                    routeBuilder.MapGet("/status", async (request, response, routeData) =>
+                    {
+                      var json = ReadCommandResult(response);
+                      await response.WriteAsync(json);
+                    });
                 });
-
-
-
             }
             else
             {
@@ -135,6 +148,23 @@ namespace PowershellWeb
             }
 
 
+        }
+
+        private static string ReadCommandResult(HttpResponse response)
+        {
+          var lastResult = PowershellSingleton.Instance.GetLastResult();
+
+          var cr = new CommandResult
+          {
+            Count = lastResult.Item1,
+            Error = 0,
+            Result = lastResult.Item2
+          };
+
+          var json = JsonSerializer.Serialize(cr);
+          response.ContentType = "text/json";
+          response.StatusCode = 200;
+          return json;
         }
     }
 }
