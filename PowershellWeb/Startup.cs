@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Management.Automation;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading;
@@ -99,11 +103,15 @@ namespace PowershellWeb
 
                     routeBuilder.MapGet("/autoCompleteItems", async (request, response, routeData) =>
                     {
-                      PowershellSingleton.Instance.RecentData.Clear();
-                      PowershellSingleton.Instance.InvokeCommand("(Get-Command).Name");
-                      PowershellSingleton.Instance.WaitForResults(100);
+                      PowerShell ps = PowerShell.Create();
+                      ps.AddCommand("Get-Command");
+                      var result = ps.Invoke();
 
-                      var recentData = string.Join(",", PowershellSingleton.Instance.RecentData.Skip(1));
+                      var commands = result
+                        .Select(psObject => psObject.BaseObject)
+                        .OfType<CommandInfo>()
+                        .Select(commandInfo => commandInfo.Name);
+                      var recentData = string.Join(",", commands);
                       response.StatusCode = 200;
                       response.ContentType = "text/plain";
                       await response.WriteAsync(recentData);
