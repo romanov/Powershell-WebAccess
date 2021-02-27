@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -21,8 +22,18 @@ namespace PowershellWeb
 
         public void TrySetKey(string key)
         {
-            if (!string.IsNullOrEmpty(key))
-                _key = key;
+          if (!string.IsNullOrEmpty(key))
+          {
+            _key = key;
+          }
+          else
+          {
+            var serverKey = Environment.GetEnvironmentVariable("ServerKey");
+            if (!string.IsNullOrEmpty(serverKey))
+            {
+              _key = serverKey;
+            }
+          }
 
             Console.WriteLine("SERVER KEY: " + Key);
         }
@@ -73,7 +84,7 @@ namespace PowershellWeb
               {
                 StartInfo =
                 {
-                  FileName = "pwsh.exe",
+                  FileName = "pwsh",
                   CreateNoWindow = true,
                   UseShellExecute = false,
                   RedirectStandardOutput = true,

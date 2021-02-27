@@ -1,0 +1,12 @@
+version: '3.4'
+
+services:
+  powershellweb:
+    image: ${DOCKER_REGISTRY-}powershellweb
+    build:
+      context: .
+      dockerfile: PowershellWeb/Dockerfile
+    ports: 
+      - "5000:5000"
+    hostname: powershellweb
+    container_name: powershellweb
